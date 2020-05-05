@@ -18,9 +18,8 @@ import (
 	"time"
 
 	"github.com/eiannone/keyboard"
-	"github.com/teris-io/shortid"
-
 	"github.com/go-ini/ini"
+	"github.com/teris-io/shortid"
 )
 
 func LocalIP() string {
@@ -34,7 +33,6 @@ func LocalIP() string {
 	}
 	return ip
 }
-
 
 //BitsBuffer bits buffer
 type BitsBuffer struct {
@@ -76,7 +74,6 @@ func BitsWrite(bits *BitsBuffer, count int, src uint64) *BitsBuffer {
 
 	return bits
 }
-
 
 func MD5(str string) string {
 	encoder := md5.New()
