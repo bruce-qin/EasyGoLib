@@ -7,6 +7,18 @@ import (
 	"net"
 )
 
+const MinMulticastAddr = uint32(uint(225)<<24 | uint(255))
+
+const MaxMulticastAddr = uint32(uint(239)<<24 | uint(255)<<16 | uint(255)<<8 | uint(255))
+
+const SpecialMinMulticastAddr = uint32(uint(232) << 24)
+
+const SpecialMaxMulticastAddr = uint32(uint(232)<<24 | uint(255)<<16 | uint(255)<<8 | uint(255))
+
+const MulticastAddrLength = int(MaxMulticastAddr - MinMulticastAddr)
+
+const SpecialMulticastAddrLength = SpecialMaxMulticastAddr - SpecialMinMulticastAddr
+
 type socketType interface {
 	isPortAvailable(port uint16) bool
 }
@@ -19,6 +31,18 @@ type UDPSocket struct {
 
 type PortErrorDesc struct {
 	Msg string
+}
+
+func RandomMulticastAddress() (addr string, port uint16) {
+	i := uint32(rand.Intn(MulticastAddrLength)) + MinMulticastAddr + 1
+	if i >= SpecialMinMulticastAddr && i <= SpecialMaxMulticastAddr {
+		i += SpecialMulticastAddrLength
+	}
+	return FormatIntAddress(i), uint16(rand.Intn(65535) + 1)
+}
+
+func FormatIntAddress(a uint32) (addr string) {
+	return fmt.Sprintf("%d.%d.%d.%d", uint(a>>24&0xff), uint(a>>16&0xff), uint(a>>8&0xff), uint(a&0xff))
 }
 
 func (TCPSocket) isPortAvailable(port uint16) bool {
