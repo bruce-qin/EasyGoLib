@@ -40,7 +40,9 @@ func RandomMulticastAddress() (addr string, port uint16) {
 	if i >= SpecialMinMulticastAddr && i <= SpecialMaxMulticastAddr {
 		i += SpecialMulticastAddrLength
 	}
-	return FormatIntAddress(i), uint16(rand.Intn(65535) + 1)
+	addr = FormatIntAddress(i)
+	port, _ = FindAvailableUDPPort(12000, 65535)
+	return
 }
 
 func FormatIntAddress(a uint32) (addr string) {
