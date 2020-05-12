@@ -40,7 +40,6 @@ func RandomMulticastAddress() (addr string, port uint16) {
 	}
 	addr = FormatIntAddress(i)
 	port, _ = FindAvailableUDPPort(12000, 65535)
-	port++
 	return
 }
 
