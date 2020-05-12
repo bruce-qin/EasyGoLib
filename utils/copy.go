@@ -16,11 +16,11 @@ func Copy(src, dest string) error {
 	if err != nil {
 		return err
 	}
-	return copy(src, dest, info)
+	return copy0(src, dest, info)
 }
 
 // "info" must be given here, NOT nil.
-func copy(src, dest string, info os.FileInfo) error {
+func copy0(src, dest string, info os.FileInfo) error {
 	if info.IsDir() {
 		return dcopy(src, dest, info)
 	}
@@ -59,7 +59,7 @@ func dcopy(src, dest string, info os.FileInfo) error {
 	}
 
 	for _, info := range infos {
-		if err := copy(
+		if err := copy0(
 			filepath.Join(src, info.Name()),
 			filepath.Join(dest, info.Name()),
 			info,

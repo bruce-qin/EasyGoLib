@@ -8,4 +8,5 @@ require (
 	github.com/jinzhu/gorm v1.9.12
 	github.com/teris-io/shortid v0.0.0-20171029131806-771a37caa5cf
 	github.com/emirpasic/gods v1.12.0
+	golang.org/x/net v0.0.0-20200506145744-7e3656a0809f
 )
