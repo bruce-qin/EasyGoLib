@@ -137,7 +137,7 @@ func FindAvailableUDPPort(min uint16, max uint16) (port uint16, err error) {
 	return 0, &PortErrorDesc{fmt.Sprintf("not engough available udp port[%d:%d]", min, max)}
 }
 
-func FindSupportMulticastInterface() (infs []*net.Interface) {
+func FindSupportMulticastInterface() (infs *net.Interface) {
 	interfaces, _ := net.Interfaces()
 out:
 	for _, ifc := range interfaces {
@@ -147,7 +147,8 @@ out:
 		addrs, _ := ifc.Addrs()
 		var ip net.IP
 		for _, addr := range addrs {
-			if strings.HasPrefix(addr.String(), "::1/") || strings.HasPrefix(addr.String(), "0:0:0:0:0:0:0:1/") || strings.Contains(addr.String(), "127.0.0.1") {
+			s := addr.String()
+			if strings.HasPrefix(s, "::1/") || strings.HasPrefix(s, "0:0:0:0:0:0:0:1/") || strings.Contains(s, "127.0.0.1") {
 				continue out
 			}
 			switch v := addr.(type) {
@@ -166,75 +167,34 @@ out:
 		if ip == nil {
 			continue out
 		}
-		infs = append(infs, &ifc)
+		return &ifc
 	}
 	return
 }
 
-func ListenMulticastAddress(multicastAddr *net.UDPAddr, infs ...*net.Interface) (conn *ipv4.PacketConn, err error) {
-	//if runtime.GOOS == "windows"{
+// linux，macos 需要设置:
+// echo 2 > /proc/sys/net/ipv4/conf/default/rp_filter
+// echo 2 > /proc/sys/net/ipv4/conf/all/rp_filter
+func ListenMulticastAddress(multicastAddr *net.UDPAddr, inf *net.Interface) (conn *ipv4.PacketConn, err error) {
 	var p net.PacketConn
-	p, err = net.ListenPacket("udp4", fmt.Sprint(":", multicastAddr.Port))
+	p, err = net.ListenPacket("udp4", fmt.Sprint(multicastAddr.IP, ":", multicastAddr.Port))
 	if err != nil {
 		return
 	}
 	conn = ipv4.NewPacketConn(p)
-	if infs == nil || len(infs) == 0 {
-		infs = FindSupportMulticastInterface()
+	if inf == nil {
+		inf = FindSupportMulticastInterface()
 	}
-	for _, inf := range infs {
-		err = conn.JoinGroup(inf, multicastAddr)
-		if err != nil {
-			return
-		}
+	err = conn.JoinGroup(inf, multicastAddr)
+	if err != nil {
+		return
 	}
 	if err = conn.SetMulticastLoopback(true); err != nil {
 		return
 	}
-	//udpConn := p.(*net.UDPConn)
-	//file, _ := udpConn.File()
-	//df := file.Fd()
-	//
-	//syscall.SetsockoptInt(df, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
+	if err = conn.SetMulticastInterface(inf); err != nil {
+		return
+	}
+	_ = conn.SetControlMessage(ipv4.FlagSrc|ipv4.FlagDst|ipv4.FlagInterface, true)
 	return
-	//} else {
-	//	var s int
-	//	s, err = syscall.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, syscall.IPPROTO_UDP)
-	//	if err != nil {
-	//		return
-	//	}
-	//	if err = syscall.SetsockoptInt(s, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1); err != nil {
-	//		return
-	//	}
-	//	if err = syscall.SetsockoptInt(s, syscall.SOL_SOCKET, syscall.SO_REUSEPORT, 1); err != nil{
-	//		return
-	//	}
-	//
-	//	if err = syscall.SetsockoptInt(s, syscall.SOL_SOCKET, syscall.SO_BROADCAST, 1); err != nil {
-	//		return
-	//	}
-	//
-	//	for _, inf := range infs{
-	//		if err = syscall.SetsockoptString(s, syscall.SOL_SOCKET, syscall.IP_MULTICAST_IF, inf.Name); err != nil {
-	//			return
-	//		}
-	//	}
-	//
-	//	lsa := syscall.SockaddrInet4{Port: multicastAddr.Port}
-	//	copy(lsa.Addr[:], multicastAddr.IP.To4())
-	//
-	//	if err = syscall.Bind(s, &lsa); err != nil {
-	//		_ = syscall.Close(s)
-	//		return
-	//	}
-	//	f := os.NewFile(uintptr(s), "")
-	//	c, err := net.FilePacketConn(f)
-	//	_ = f.Close()
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
-	//	p := ipv4.NewPacketConn(c)
-	//
-	//	return p, nil
-	//}
 }
