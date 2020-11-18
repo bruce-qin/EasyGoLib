@@ -145,29 +145,17 @@ out:
 			continue out
 		}
 		addrs, _ := ifc.Addrs()
-		var ip net.IP
 		for _, addr := range addrs {
 			s := addr.String()
 			if strings.HasPrefix(s, "::1/") || strings.HasPrefix(s, "0:0:0:0:0:0:0:1/") || strings.Contains(s, "127.0.0.1") {
 				continue out
 			}
-			switch v := addr.(type) {
-			case *net.IPAddr:
-				if v.IP.To4() != nil {
-					ip = v.IP
+			if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+				if ip := ipnet.IP.To4(); ip != nil && strings.Contains(ip.String(), ".") {
+					return &ifc
 				}
-			case *net.IPNet:
-				if v.IP.To4() != nil {
-					ip = v.IP
-				}
-			default:
-				continue
 			}
 		}
-		if ip == nil {
-			continue out
-		}
-		return &ifc
 	}
 	return
 }
