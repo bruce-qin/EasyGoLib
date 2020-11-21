@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql/driver"
 	"fmt"
+	glogger "gorm.io/gorm/logger"
 	"log"
 	"os"
 	"reflect"
@@ -13,7 +14,11 @@ import (
 )
 
 var (
-	DefaultGormLogger        = GormLogger{log.New(os.Stdout, "[ORM] ", 0)}
+	DefaultGormLogger = glogger.New(log.New(os.Stdout, "[GORM]", log.LstdFlags), glogger.Config{
+		SlowThreshold: 200 * time.Millisecond,
+		LogLevel:      glogger.Warn,
+		Colorful:      true,
+	}) //GormLogger{log.New(os.Stdout, "[ORM] ", 0)}
 	sqlRegexp                = regexp.MustCompile(`\?`)
 	numericPlaceHolderRegexp = regexp.MustCompile(`\$\d+`)
 )
